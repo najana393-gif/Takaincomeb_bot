@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CashReward Mini App</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Mobile-first styling */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #121212; 
+            color: #ffffff;
+            /* Ensure full viewport height on mobile, but don't force overflow */
+            min-height: 100vh;
+        }
+        .dark-bg { background-color: #121212; }
+        .card-bg { background-color: #1e1e1e; }
+        .text-accent { color: #ff8c00; } /* Orange Accent */
+        .btn-accent { 
+            background-color: #ff8c00; 
+            color: #121212; 
+            font-weight: bold; 
+            transition: transform 0.1s;
+        }
+        .btn-accent:active { transform: scale(0.98); }
+
+        .main-page { display: none; }
+        .main-page.active { display: flex; animation: fadeIn 0.5s ease-in-out; }
+        .sub-page { display: none; padding-bottom: 70px; } /* Added padding for fixed nav */
+        .sub-page.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        
+        .bottom-nav a.active { color: #ff8c00; transform: scale(1.05); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="max-w-md mx-auto">
+
+    <!-- 1. Loader & Custom Alert -->
+    <div id="loader" class="hidden fixed inset-0 dark-bg bg-opacity-75 flex items-center justify-center z-50">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-accent"></div>
+    </div>
+    <div id="custom-alert" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-xs text-center shadow-2xl border border-accent">
+            <p id="alert-message" class="mb-4 text-lg font-medium"></p>
+            <button id="alert-ok-btn" class="btn-accent px-8 py-2 rounded-full shadow-md">OK</button>
+        </div>
+    </div>
+
+    <!-- 2. Auth Section -->
+    <div id="auth-section" class="min-h-screen p-6 flex-col justify-center main-page">
+        <h1 class="text-4xl font-bold text-center mb-10 text-accent">CashReward App</h1>
+        <div id="auth-container" class="card-bg p-6 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-semibold mb-6 text-center" id="auth-title">Login করুন (Login)</h2>
+            <div id="login-view">
+                <input id="login-email" type="email" placeholder="ইমেইল (Email)" class="w-full p-3 rounded-lg bg-gray-700 placeholder-gray-400 mb-4 focus:ring-accent focus:ring-2 border-none">
+                <input id="login-password" type="password" placeholder="পাসওয়ার্ড (Password)" class="w-full p-3 rounded-lg bg-gray-700 placeholder-gray-400 mb-6 focus:ring-accent focus:ring-2 border-none">
+                <button id="login-btn" class="w-full p-3 rounded-full btn-accent shadow-md">Login</button>
+                <p class="text-center text-gray-400 mt-4">একাউন্ট নেই? <a href="#" id="show-signup" class="font-semibold text-accent hover:underline">সাইন আপ করুন</a></p>
+            </div>
+            <div id="signup-view" class="hidden">
+                <input id="signup-name" type="text" placeholder="পূর্ণ নাম (Full Name)" class="w-full p-3 rounded-lg bg-gray-700 placeholder-gray-400 mb-4 focus:ring-accent focus:ring-2 border-none">
+                <input id="signup-email" type="email" placeholder="ইমেইল (Email)" class="w-full p-3 rounded-lg bg-gray-700 placeholder-gray-400 mb-4 focus:ring-accent focus:ring-2 border-none">
+                <input id="signup-password" type="password" placeholder="পাসওয়ার্ড (Password)" class="w-full p-3 rounded-lg bg-gray-700 placeholder-gray-400 mb-6 focus:ring-accent focus:ring-2 border-none">
+                <button id="signup-btn" class="w-full p-3 rounded-full btn-accent shadow-md">Sign Up</button>
+                <p class="text-center text-gray-400 mt-4">একাউন্ট আছে? <a href="#" id="show-login" class="font-semibold text-accent hover:underline">Login করুন</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Main App Container -->
+    <div id="app-container" class="min-h-screen flex-col main-page">
+        <header class="flex items-center justify-between p-4 sticky top-0 bg-opacity-90 backdrop-blur-sm z-10 dark-bg border-b border-gray-800">
+            <h1 class="text-xl font-bold text-accent">টাকা কামাই (Taka Kamai)</h1>
+            <div class="flex items-center space-x-4">
+                <i data-lucide="user" class="w-6 h-6 cursor-pointer text-gray-400" onclick="navigateTo('profile-page')"></i>
+            </div>
+        </header>
+
+        <main class="flex-grow overflow-y-auto">
+            <!-- Home & Task Page -->
+            <div id="home-page" class="p-4 space-y-6 sub-page active">
+                <div class="card-bg p-6 rounded-xl flex items-center justify-between shadow-lg border border-gray-700">
+                    <div>
+                        <p class="text-gray-400 text-sm font-medium">আপনার ব্যালেন্স (Your Balance)</p>
+                        <p class="text-4xl font-extrabold text-white"><span id="coin-balance">0</span> Coins</p>
+                    </div>
+                    <button onclick="navigateTo('wallet-page')" class="btn-accent px-5 py-2 rounded-full text-sm shadow-xl flex items-center space-x-2">
+                        <i data-lucide="arrow-down-to-line" class="w-4 h-4 text-black"></i>
+                        <span>Withdraw</span>
+                    </button>
+                </div>
+                
+                <section>
+                    <h2 class="text-xl font-bold mb-4">দৈনিক কাজ (Daily Tasks)</h2>
+                    <div class="card-bg p-4 rounded-xl shadow-md space-y-4">
+                        <div class="flex justify-between items-center pb-2 border-b border-gray-700">
+                            <p class="text-lg font-semibold text-accent">Task-এর অবস্থা</p>
+                            <p class="text-sm text-gray-400">Claims বাকি: <span id="tasks-left-count">...</span></p>
+                        </div>
+                        
+                        <!-- Task 1: Claim Bonus -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-3xl">🎁</span>
+                                <div><h3 class="font-bold">Daily Bonus Claim</h3><p class="text-xs text-gray-400">প্রতি ক্লেইমে <span id="reward-amount">50</span> Coins</p></div>
+                            </div>
+                            <button id="claim-btn" class="btn-accent px-4 py-2 rounded-full text-sm font-bold shadow-lg" onclick="claimReward('daily')">Claim Now</button>
+                        </div>
+
+                        <!-- Task 2: Join Telegram (Placeholder) -->
+                        <div class="flex items-center justify-between opacity-70">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-3xl">📢</span>
+                                <div><h3 class="font-bold">Telegram-এ জয়েন (50 Coins)</h3><p class="text-xs text-gray-500">লিমিট পূর্ণ হলে পাবেন না</p></div>
+                            </div>
+                            <button class="bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold cursor-not-allowed" disabled>Done</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Wallet Page -->
+            <div id="wallet-page" class="p-4 space-y-6 sub-page">
+                <h2 class="text-2xl font-bold text-center mb-6">Wallet (উত্তোলন)</h2>
+                <div class="card-bg p-6 rounded-xl shadow-lg border border-gray-700">
+                    <p class="text-gray-400 text-sm mb-2">Current Balance: <span class="font-bold text-accent" id="wallet-coin-balance">0</span> Coins</p>
+                    <p class="text-gray-400 text-sm mb-4">সর্বনিম্ন উত্তোলন: <span id="min-withdrawal-info" class="font-bold text-white">...</span> Coins</p>
+                    
+                    <p class="text-sm text-gray-300 font-semibold mb-4" id="coin-value-info">...</p>
+                    
+                    <input id="withdraw-amount" type="number" placeholder="Coins-এর পরিমাণ" class="w-full p-3 rounded-lg bg-gray-700 placeholder-gray-400 mb-3 focus:ring-accent focus:ring-2 border-none">
+                    
+                    <select id="withdraw-method" class="w-full p-3 rounded-lg bg-gray-700 text-white mb-3 focus:ring-accent focus:ring-2 border-none"></select>
+                    
+                    <div id="payment-details-container">
+                        <!-- Dynamic payment input field will be inserted here -->
+                    </div>
+                    
+                    <button id="withdraw-btn" class="w-full p-3 rounded-full btn-accent mt-6 shadow-md">Withdraw Request</button>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-3">উত্তোলনের ইতিহাস (History)</h3>
+                    <div id="withdrawal-history-list" class="space-y-3 text-gray-400 text-center">
+                        <p>Loading history...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Refer Page -->
+            <div id="refer-page" class="p-4 space-y-6 sub-page">
+                <h2 class="text-2xl font-bold text-center mb-6">রেফার করে ইনকাম (Refer & Earn)</h2>
+                <div class="card-bg p-6 rounded-xl text-center shadow-lg border border-gray-700">
+                    <p class="text-gray-400 mb-2">আপনার রেফার কোড</p>
+                    <div class="bg-gray-800 p-3 rounded-lg flex items-center justify-center mb-4 border border-gray-700">
+                        <span id="referral-code" class="text-2xl font-bold tracking-widest text-accent">LOADING...</span>
+                        <button id="copy-code-btn" class="ml-4 hover:opacity-80">
+                            <i data-lucide="copy" class="w-6 h-6 text-gray-400"></i>
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-300 font-semibold">প্রত্যেক সফল রেফারে ৫০ Coins বোনাস!</p>
+                </div>
+                
+                <button id="share-btn" class="w-full p-3 rounded-full btn-accent shadow-md flex items-center justify-center space-x-2">
+                    <i data-lucide="share" class="w-5 h-5 text-black"></i>
+                    <span>বন্ধুদের সাথে শেয়ার করুন</span>
+                </button>
+                
+                <div class="card-bg p-4 rounded-xl mt-6 shadow-md border border-gray-700">
+                    <h3 class="font-semibold mb-3 text-center">রেফার কোড ব্যবহার করুন</h3>
+                    <input id="enter-referral-code" type="text" placeholder="বন্ধুর রেফার কোড দিন" class="w-full p-3 rounded-lg bg-gray-700 placeholder-gray-400 mb-3 focus:ring-accent focus:ring-2 border-none">
+                    <button id="apply-referral-btn" class="w-full p-3 rounded-full border border-accent text-accent font-bold hover:bg-accent hover:text-black transition duration-200">কোড নিশ্চিত করুন</button>
+                </div>
+            </div>
+
+            <!-- Profile Page -->
+            <div id="profile-page" class="p-4 space-y-6 sub-page">
+                <h2 class="text-2xl font-bold text-center mb-6">প্রোফাইল (Profile)</h2>
+                <div class="card-bg p-6 rounded-xl shadow-lg flex flex-col items-center border border-gray-700">
+                    <img src="https://placehold.co/100x100/1e1e1e/ff8c00?text=U" onerror="this.src='https://placehold.co/100x100/1e1e1e/ff8c00?text=U'" class="rounded-full mb-4 ring-2 ring-accent">
+                    <h2 id="profile-name" class="text-xl font-bold">User Name</h2>
+                    <p id="profile-email" class="text-gray-400">user@email.com</p>
+                </div>
+                <button id="logout-btn" class="w-full mt-6 p-3 rounded-full bg-red-600 text-white font-bold hover:bg-red-700 transition duration-200">Logout করুন</button>
+            </div>
+
+        </main>
+
+        <!-- 4. Bottom Navigation -->
+        <nav class="bottom-nav fixed bottom-0 left-0 right-0 max-w-md mx-auto grid grid-cols-4 items-center text-center py-2 card-bg border-t border-gray-800 shadow-2xl z-20">
+            <a href="#" class="nav-link p-2 active" data-page="home-page"><i data-lucide="home" class="mx-auto w-6 h-6"></i><span class="text-xs">হোম</span></a>
+            <a href="#" class="nav-link p-2" data-page="wallet-page"><i data-lucide="wallet" class="mx-auto w-6 h-6"></i><span class="text-xs">ওয়ালেট</span></a>
+            <a href="#" class="nav-link" data-page="refer-page"><i data-lucide="users" class="mx-auto w-6 h-6"></i><span class="text-xs">রেফার</span></a>
+            <a href="#" class="nav-link" data-page="profile-page"><i data-lucide="user" class="mx-auto w-6 h-6"></i><span class="text-xs">প্রোফাইল</span></a>
+        </nav>
+    </div>
+    
+    <!-- 5. JavaScript (Firebase & App Logic) -->
+    <script type="module">
+        // --- Canvas Environment Variables & Firebase Imports ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, query, where, getDocs, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        setLogLevel('Debug'); // Enable debug logging
+
+        // MANDATORY: Setup Firebase using environment variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+        let userData = null;
+        // Default Config (Admin can override via Firestore)
+        let appConfig = { 
+            minWithdrawal: 5000, 
+            paymentMethods: ["Bkash", "Nagad", "Rocket"], 
+            coinValueCoins: 1000, 
+            coinValueInr: 10, 
+            dailyTaskLimit: 2, 
+            rewardPerClaim: 50,
+            referralBonus: 50 
+        };
+        const todayDate = new Date().toISOString().split('T')[0];
+
+        // UI Elements
+        const loader = document.getElementById('loader');
+        const coinBalanceEl = document.getElementById('coin-balance');
+        const walletCoinBalanceEl = document.getElementById('wallet-coin-balance');
+        const profileNameEl = document.getElementById('profile-name');
+        const profileEmailEl = document.getElementById('profile-email');
+        const referralCodeEl = document.getElementById('referral-code');
+        const minWithdrawalInfoEl = document.getElementById('min-withdrawal-info');
+        const coinValueInfoEl = document.getElementById('coin-value-info');
+        const withdrawMethodSelect = document.getElementById('withdraw-method');
+        const tasksLeftCountEl = document.getElementById('tasks-left-count');
+        const paymentDetailsContainer = document.getElementById('payment-details-container');
+        const rewardAmountEl = document.getElementById('reward-amount');
+
+        // --- Utility Functions (Alert/Navigation) ---
+        const customAlert = document.getElementById('custom-alert');
+        const alertMessage = document.getElementById('alert-message');
+        const alertOkBtn = document.getElementById('alert-ok-btn');
+
+        function showAlert(message) {
+            alertMessage.textContent = message;
+            customAlert.classList.remove('hidden');
+        }
+        alertOkBtn.addEventListener('click', () => { customAlert.classList.add('hidden'); });
+        window.showAlert = showAlert;
+
+        function showMainPage(pageId) {
+            document.querySelectorAll('.main-page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function navigateTo(pageId) {
+            document.querySelectorAll('.sub-page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.dataset.page === pageId) link.classList.add('active');
+            });
+            // Load content specific to the page
+            if (pageId === 'wallet-page' && currentUser) loadWithdrawalHistory();
+        }
+        window.navigateTo = navigateTo;
+        
+        // --- Core Authentication & Initialization ---
+
+        window.onload = async () => {
+            lucide.createIcons();
+            setupEventListeners();
+            showMainPage('auth-section');
+            
+            // 1. Initial Authentication Check
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    currentUser = user;
+                    await fetchAppConfig();
+                    await fetchUserData();
+                    updateUI();
+                    showMainPage('app-container');
+                    navigateTo('home-page');
+                } else {
+                    currentUser = null;
+                    userData = null;
+                    showMainPage('auth-section');
+                }
+                loader.style.display = 'none';
+            });
+            
+            // 2. Custom Token Sign-In (Canvas environment)
+            loader.style.display = 'flex';
+            if (typeof __initial_auth_token !== 'undefined') {
+                try {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } catch (error) {
+                    console.error("Custom token sign-in failed, falling back to anonymous:", error);
+                    // Fallback to anonymous sign-in if custom token fails
+                    await signInAnonymously(auth); 
+                }
+            } else {
+                // Anonymous sign-in if no custom token is provided
+                await signInAnonymously(auth); 
+            }
+        };
+
+        // --- Firebase Data Fetching ---
+        
+        async function fetchAppConfig() {
+            const configRef = doc(db, "artifacts", appId, "public/data", "config");
+            try {
+                const configSnap = await getDoc(configRef);
+                if (configSnap.exists()) {
+                    appConfig = { ...appConfig, ...configSnap.data() };
+                }
+            } catch (error) {
+                console.error("Error fetching app config:", error);
+            }
+        }
+        
+        async function fetchUserData() {
+            if (!currentUser) return;
+            const userId = currentUser.uid;
+            // Document path: /artifacts/{appId}/users/{userId}/user_profile/main
+            const userRef = doc(db, "artifacts", appId, "users", userId, "user_profile", "main");
+            
+            try {
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    userData = userSnap.data();
+                    
+                    // Daily task reset logic
+                    if (userData.lastTaskDate !== todayDate) {
+                        userData.dailyTaskCount = 0;
+                        await updateDoc(userRef, { dailyTaskCount: 0, lastTaskDate: todayDate });
+                    }
+                } else {
+                    // New user setup
+                    const ownReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                    const initialBonus = appConfig.referralBonus || 50;
+
+                    const defaultUserData = {
+                        uid: userId, 
+                        name: currentUser.displayName || currentUser.email || 'New User', 
+                        email: currentUser.email || 'N/A',
+                        balance: initialBonus, // Initial Signup Bonus
+                        referralCode: ownReferralCode, 
+                        referredBy: null,
+                        createdAt: serverTimestamp(),
+                        dailyTaskCount: 0, 
+                        lastTaskDate: todayDate, 
+                    };
+                    await setDoc(userRef, defaultUserData);
+                    userData = defaultUserData;
+
+                    // Log the initial bonus transaction
+                    await addDoc(collection(db, "artifacts", appId, "users", userId, "transactions"), {
+                        type: "signup_bonus", amount: initialBonus, date: serverTimestamp()
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+                showAlert("ইউজার ডেটা লোড করতে সমস্যা হয়েছে।");
+            }
+        }
+
+        // --- UI Update & Logic ---
+
+        function updateUI() {
+            if (!userData) return;
+            const balance = userData.balance || 0;
+            coinBalanceEl.textContent = balance;
+            walletCoinBalanceEl.textContent = balance;
+            profileNameEl.textContent = userData.name || 'User Name';
+            profileEmailEl.textContent = userData.email || 'user@email.com';
+            referralCodeEl.textContent = userData.referralCode || '...';
+
+            // Config-based UI updates
+            const minW = appConfig.minWithdrawal || 5000;
+            const coinVal = appConfig.coinValueCoins || 1000;
+            const inrVal = appConfig.coinValueInr || 10;
+            const rewardAmt = appConfig.rewardPerClaim || 50;
+            const limit = appConfig.dailyTaskLimit || 2;
+            
+            minWithdrawalInfoEl.textContent = `${minW} Coins`;
+            coinValueInfoEl.textContent = `${coinVal} Coins = ৳${inrVal}`;
+            rewardAmountEl.textContent = rewardAmt;
+
+            // Task UI Update
+            const claimedCount = userData.dailyTaskCount || 0;
+            const claimsLeft = Math.max(0, limit - claimedCount);
+            tasksLeftCountEl.textContent = `${claimsLeft} / ${limit}`;
+            const isLimitReached = claimsLeft <= 0;
+            
+            const claimBtn = document.getElementById('claim-btn');
+            claimBtn.disabled = isLimitReached;
+            claimBtn.textContent = isLimitReached ? 'সীমা পূর্ণ (Limit Reached)' : 'Claim Now';
+            if (isLimitReached) {
+                claimBtn.classList.add('bg-gray-600', 'cursor-not-allowed');
+                claimBtn.classList.remove('btn-accent');
+            } else {
+                claimBtn.classList.add('btn-accent');
+                claimBtn.classList.remove('bg-gray-600', 'cursor-not-allowed');
+            }
+
+            // Wallet UI Update
+            withdrawMethodSelect.innerHTML = '';
+            (appConfig.paymentMethods || []).forEach(method => {
+                const option = document.createElement('option');
+                option.value = method;
+                option.textContent = method;
+                withdrawMethodSelect.appendChild(option);
+            });
+            updateDynamicPaymentFields();
+            
+            // Refer UI Update
+            const applyReferralBtn = document.getElementById('apply-referral-btn');
+            const enterReferralCode = document.getElementById('enter-referral-code');
+            if (userData.referredBy) {
+                enterReferralCode.disabled = true;
+                enterReferralCode.placeholder = `ইতিমধ্যে রেফার কোড ব্যবহৃত হয়েছে: ${userData.referredBy}`;
+                applyReferralBtn.disabled = true;
+                applyReferralBtn.textContent = "কোড যুক্ত করা হয়েছে";
+                applyReferralBtn.classList.add('bg-gray-600', 'cursor-not-allowed');
+                applyReferralBtn.classList.remove('text-accent', 'border-accent', 'hover:bg-accent');
+            } else {
+                 applyReferralBtn.classList.remove('bg-gray-600', 'cursor-not-allowed');
+                 applyReferralBtn.classList.add('text-accent', 'border-accent', 'hover:bg-accent');
+            }
+        }
+
+        function updateDynamicPaymentFields() {
+            const selectedMethod = withdrawMethodSelect.value;
+            let placeholder = `আপনার ${selectedMethod} একাউন্ট নাম্বার দিন (01XXXXXXXXXX)`;
+            paymentDetailsContainer.innerHTML = `<input id="payment-detail-input" type="text" placeholder="${placeholder}" class="w-full p-3 rounded-lg bg-gray-700 placeholder-gray-400 focus:ring-accent focus:ring-2 border-none">`;
+        }
+
+        // --- Event Handlers (Auth & App Actions) ---
+
+        function setupEventListeners() {
+            // Auth View Toggles
+            document.getElementById('show-signup').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('login-view').classList.add('hidden'); document.getElementById('signup-view').classList.remove('hidden'); document.getElementById('auth-title').textContent = 'Sign Up করুন'; });
+            document.getElementById('show-login').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('signup-view').classList.add('hidden'); document.getElementById('login-view').classList.remove('hidden'); document.getElementById('auth-title').textContent = 'Login করুন (Login)'; });
+            
+            // Auth Actions
+            document.getElementById('signup-btn').addEventListener('click', handleSignup);
+            document.getElementById('login-btn').addEventListener('click', handleLogin);
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            
+            // Nav Link Handlers
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => { e.preventDefault(); navigateTo(link.dataset.page); });
+            });
+            
+            // Wallet Actions
+            document.getElementById('withdraw-btn').addEventListener('click', handleWithdrawal);
+            withdrawMethodSelect.addEventListener('change', updateDynamicPaymentFields);
+
+            // Refer Actions
+            document.getElementById('copy-code-btn').addEventListener('click', copyReferralCode);
+            document.getElementById('share-btn').addEventListener('click', shareReferralCode);
+            document.getElementById('apply-referral-btn').addEventListener('click', handleApplyReferralCode);
+        }
+
+        async function handleSignup() {
+            const name = document.getElementById('signup-name').value.trim();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value;
+            if (!name || !email || !password || password.length < 6) return showAlert("দয়া করে সব তথ্য দিন এবং পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।");
+            loader.style.display = 'flex';
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(userCredential.user, { displayName: name });
+                // Note: The rest of the setup (setDoc, log transaction) is handled by onAuthStateChanged -> fetchUserData
+                showAlert("সাইন আপ সফল! লগইন করা হচ্ছে...");
+            } catch (error) {
+                showAlert(`Sign Up failed: ${error.message}`);
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            if (!email || !password) return showAlert("দয়া করে ইমেইল ও পাসওয়ার্ড দিন।");
+            loader.style.display = 'flex';
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                showAlert(`Login failed: ${error.message}`);
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+        
+        async function handleLogout() {
+            try {
+                await signOut(auth);
+                showAlert("সফলভাবে লগআউট করা হয়েছে।");
+            } catch (error) {
+                console.error("Logout Error:", error);
+                showAlert("Logout করতে সমস্যা হয়েছে।");
+            }
+        }
+        
+        // --- Core Application Logic ---
+
+        async function claimReward(type) {
+            if (!currentUser || !userData) return showAlert("দয়া করে আগে Login করুন।");
+            const limit = appConfig.dailyTaskLimit || 2;
+            const reward = appConfig.rewardPerClaim || 50;
+
+            if ((userData.dailyTaskCount || 0) >= limit) {
+                return showAlert(`আপনি আজকের জন্য ${limit}টি বোনাস ক্লেইম করে ফেলেছেন। আগামীকাল আবার চেষ্টা করুন।`);
+            }
+
+            loader.style.display = 'flex';
+            const userRef = doc(db, "artifacts", appId, "users", currentUser.uid, "user_profile", "main");
+
+            try {
+                // 1. Update user data (balance and task count)
+                const newBalance = (userData.balance || 0) + reward;
+                const newTaskCount = (userData.dailyTaskCount || 0) + 1;
+
+                await updateDoc(userRef, {
+                    balance: newBalance,
+                    dailyTaskCount: newTaskCount,
+                    lastTaskDate: todayDate 
+                });
+
+                // 2. Update local state
+                userData.balance = newBalance;
+                userData.dailyTaskCount = newTaskCount;
+                
+                // 3. Log the transaction (private history)
+                await addDoc(collection(db, "artifacts", appId, "users", currentUser.uid, "transactions"), {
+                    type: "task_claim", taskType: type, amount: reward, date: serverTimestamp()
+                });
+                
+                // 4. Update UI
+                updateUI();
+                showAlert(`${reward} Coins ক্লেইম সফল! বাকি আছে: ${limit - newTaskCount} টি।`);
+
+            } catch (error) {
+                console.error("Error claiming reward:", error);
+                showAlert("ক্লেইম করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+        window.claimReward = claimReward; 
+
+        async function loadWithdrawalHistory() {
+            if (!currentUser) return;
+            const historyList = document.getElementById('withdrawal-history-list');
+            historyList.innerHTML = '<p class="text-gray-500 text-center">ইতিহাস লোড হচ্ছে...</p>';
+            
+            // Collection path: /artifacts/{appId}/public/data/withdrawal_requests
+            const historyColRef = collection(db, "artifacts", appId, "public/data", "withdrawal_requests");
+            // Query public requests only for the current user, ordered by request time
+            // NOTE: Using a query to fetch all documents and filtering locally to avoid index errors with orderBy
+            const q = query(historyColRef, where("userId", "==", currentUser.uid), limit(10));
+
+            try {
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    historyList.innerHTML = '<p class="text-gray-500 text-center">কোনো উত্তোলনের ইতিহাস পাওয়া যায়নি।</p>';
+                    return;
+                }
+                
+                // Sort clientside by date (descending)
+                const sortedDocs = querySnapshot.docs
+                    .map(doc => ({ id: doc.id, data: doc.data() }))
+                    .sort((a, b) => {
+                        const dateA = a.data.requestedAt ? a.data.requestedAt.toMillis() : 0;
+                        const dateB = b.data.requestedAt ? b.data.requestedAt.toMillis() : 0;
+                        return dateB - dateA; // Newest first
+                    });
+
+                let historyHTML = '';
+                sortedDocs.forEach(docItem => {
+                    const data = docItem.data;
+                    const statusClass = data.status === 'Completed' ? 'bg-green-600' : 
+                                       data.status === 'Pending' ? 'bg-yellow-600' : 'bg-red-600';
+                    const dateStr = data.requestedAt ? new Date(data.requestedAt.toDate()).toLocaleDateString('bn-BD') : 'N/A';
+                    
+                    historyHTML += `
+                        <div class="card-bg p-3 rounded-lg flex justify-between items-center border-l-4 border-accent">
+                            <div>
+                                <p class="font-bold text-lg">${data.amount} Coins</p>
+                                <p class="text-xs text-gray-400">${data.method} - ${data.details.substring(0, 15)}...</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs font-semibold px-2 py-1 rounded-full ${statusClass}">${data.status}</span>
+                                <p class="text-xs text-gray-500 mt-1">${dateStr}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                historyList.innerHTML = historyHTML;
+
+            } catch (error) {
+                console.error("Error loading withdrawal history:", error);
+                historyList.innerHTML = '<p class="text-red-400 text-center">ইতিহাস লোড করতে ব্যর্থ।</p>';
+            }
+        }
+
+        async function handleWithdrawal() {
+            if (!currentUser || !userData) return showAlert("দয়া করে আগে Login করুন।");
+            
+            const amount = parseInt(document.getElementById('withdraw-amount').value);
+            const method = withdrawMethodSelect.value;
+            const details = document.getElementById('payment-detail-input').value.trim();
+            const minW = appConfig.minWithdrawal || 5000;
+
+            if (isNaN(amount) || amount <= 0) return showAlert("উত্তোলনের সঠিক পরিমাণ দিন।");
+            if (amount < minW) return showAlert(`সর্বনিম্ন উত্তোলন ${minW} Coins।`);
+            if (amount > (userData.balance || 0)) return showAlert("আপনার ব্যালেন্সে যথেষ্ট কয়েন নেই।");
+            if (!details) return showAlert(`দয়া করে ${method} একাউন্ট নাম্বার দিন।`);
+
+            loader.style.display = 'flex';
+            const userRef = doc(db, "artifacts", appId, "users", currentUser.uid, "user_profile", "main");
+            // Public collection for withdrawal requests: /artifacts/{appId}/public/data/withdrawal_requests
+            const withdrawalColRef = collection(db, "artifacts", appId, "public/data", "withdrawal_requests");
+
+            try {
+                // 1. Deduct balance from user profile
+                const newBalance = (userData.balance || 0) - amount;
+                await updateDoc(userRef, { balance: newBalance });
+                userData.balance = newBalance; // Update local state
+
+                // 2. Create public withdrawal request (for Admin/Tracker)
+                await addDoc(withdrawalColRef, {
+                    userId: currentUser.uid,
+                    userName: userData.name,
+                    amount: amount,
+                    method: method,
+                    details: details,
+                    status: "Pending",
+                    requestedAt: serverTimestamp()
+                });
+                
+                // 3. Log transaction (private history)
+                await addDoc(collection(db, "artifacts", appId, "users", currentUser.uid, "transactions"), {
+                    type: "withdrawal", amount: -amount, method: method, date: serverTimestamp()
+                });
+
+                updateUI();
+                loadWithdrawalHistory(); // Refresh history
+                showAlert("উত্তোলনের অনুরোধ সফলভাবে পাঠানো হয়েছে। ২৪-৪৮ ঘণ্টার মধ্যে পেমেন্ট পেয়ে যাবেন।");
+
+            } catch (error) {
+                console.error("Error handling withdrawal:", error);
+                showAlert("উত্তোলনের অনুরোধ পাঠাতে সমস্যা হয়েছে।");
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        function copyReferralCode() {
+            const code = referralCodeEl.textContent;
+            if (code && code !== 'LOADING...') {
+                // Use execCommand for better compatibility in iFrames
+                const tempInput = document.createElement('input');
+                tempInput.value = code;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                try {
+                    document.execCommand('copy');
+                    showAlert("রেফার কোড কপি করা হয়েছে!");
+                } catch (err) {
+                    console.error('Could not copy text: ', err);
+                    showAlert("কপি করতে সমস্যা হয়েছে। ম্যানুয়ালি কপি করুন।");
+                } finally {
+                    document.body.removeChild(tempInput);
+                }
+            }
+        }
+
+        function shareReferralCode() {
+            const code = referralCodeEl.textContent;
+            const bonus = appConfig.referralBonus || 50;
+            const shareText = `আমার রেফার কোড ব্যবহার করে CashReward Mini App-এ জয়েন করুন এবং ${bonus} Coins বোনাস পান! আমার কোড: ${code}\n[অ্যাপ লিঙ্ক]`; // Add your app link here
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'CashReward Mini App Referral',
+                    text: shareText
+                }).catch(error => console.error('Error sharing:', error));
+            } else {
+                // Fallback for non-supporting browsers
+                copyReferralCode();
+                showAlert("শেয়ার অপশন নেই। রেফার কোড কপি করে বন্ধুদের সাথে শেয়ার করুন।");
+            }
+        }
+
+        async function handleApplyReferralCode() {
+            if (!currentUser || !userData) return showAlert("দয়া করে আগে Login করুন।");
+
+            const enteredCode = document.getElementById('enter-referral-code').value.trim().toUpperCase();
+
+            if (!enteredCode) return showAlert("দয়া করে রেফার কোড দিন।");
+            if (userData.referredBy) return showAlert("আপনি ইতিমধ্যে একটি রেফার কোড ব্যবহার করেছেন।");
+            if (enteredCode === (userData.referralCode || '').toUpperCase()) return showAlert("আপনি নিজের রেফার কোড ব্যবহার করতে পারবেন না।");
+
+            loader.style.display = 'flex';
+
+            try {
+                // 1. Find the referrer by querying the 'user_profile/main' document across all user subcollections
+                let referrerId = null;
+                const usersColRef = collection(db, "artifacts", appId, "users");
+                
+                // This is a Firestore complexity: querying nested fields across all user subcollections is not straightforward
+                // The current implementation requires checking each user's profile document one by one, which is inefficient but works.
+                let referrerProfileSnap = null;
+                const usersSnapshot = await getDocs(usersColRef);
+
+                for (const userDoc of usersSnapshot.docs) {
+                    const profileSnap = await getDoc(doc(db, "artifacts", appId, "users", userDoc.id, "user_profile", "main"));
+                    if (profileSnap.exists() && profileSnap.data().referralCode === enteredCode) {
+                        referrerId = userDoc.id;
+                        referrerProfileSnap = profileSnap;
+                        break;
+                    }
+                }
+                
+                if (!referrerId) {
+                    return showAlert("এই রেফার কোডটি সঠিক নয়।");
+                }
+
+                const bonusAmount = appConfig.referralBonus || 50;
+
+                // 2. Update current user's profile (grant bonus and set referredBy)
+                const currentUserRef = doc(db, "artifacts", appId, "users", currentUser.uid, "user_profile", "main");
+                const newBalance = (userData.balance || 0) + bonusAmount;
+                
+                await updateDoc(currentUserRef, {
+                    balance: newBalance,
+                    referredBy: enteredCode
+                });
+                
+                userData.balance = newBalance; // Update local state
+
+                // 3. Give bonus to the referrer (the owner of the code)
+                const referrerRef = doc(db, "artifacts", appId, "users", referrerId, "user_profile", "main");
+                const referrerBalance = (referrerProfileSnap.data().balance || 0) + bonusAmount;
+                await updateDoc(referrerRef, { balance: referrerBalance });
+                    
+                // Log transaction for referrer
+                await addDoc(collection(db, "artifacts", appId, "users", referrerId, "transactions"), {
+                    type: "referral_bonus", amount: bonusAmount, fromUser: currentUser.uid, date: serverTimestamp()
+                });
+
+                // 4. Log transaction for current user
+                await addDoc(collection(db, "artifacts", appId, "users", currentUser.uid, "transactions"), {
+                    type: "referral_used", amount: bonusAmount, referredBy: enteredCode, date: serverTimestamp()
+                });
+                
+                updateUI();
+                document.getElementById('enter-referral-code').value = '';
+                showAlert(`রেফার কোড সফলভাবে যুক্ত হয়েছে! আপনি ${bonusAmount} Coins বোনাস পেয়েছেন!`);
+
+            } catch (error) {
+                console.error("Error applying referral code:", error);
+                showAlert("রেফার কোড ব্যবহার করতে সমস্যা হয়েছে।");
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
