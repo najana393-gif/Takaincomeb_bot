@@ -82,42 +82,47 @@
 
         <main class="flex-grow">
             <!-- Home Page -->
-            <div id="home-page" class="p-4 space-y-6 sub-page">
-                <div class="card-bg p-4 rounded-lg flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-400 text-sm">Your Balance</p>
-                        <p class="text-3xl font-bold"><span id="coin-balance">0</span> Coins</p>
-                    </div>
-                    <button id="home-withdraw-btn" class="bg-white text-black font-semibold px-6 py-2 rounded-lg">Withdraw</button>
-                </div>
-                <section>
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h2 class="text-lg font-semibold">Daily Tasks</h2>
-                            <p class="text-sm text-gray-400 mb-4">Complete tasks to get rewards.</p>
-                        </div>
-                        <p class="text-sm text-gray-400">Ads Left: <span id="ads-left-count">...</span></p>
-                    </div>
-                    <div class="space-y-3">
-                        <div class="bg-orange-500 p-3 rounded-lg flex items-center justify-between text-black">
-                            <div class="flex items-center space-x-3"><span class="text-3xl">ðŸ¤©</span><div><h3 class="font-bold">Watch Short Ad</h3><p class="text-xs font-medium">Rewarded Interstitial</p></div></div>
-                            <button class="bg-white text-orange-500 font-bold px-6 py-2 rounded-lg text-sm btn" onclick="claimReward('interstitial')">Claim</button>
-                        </div>
-                        <div class="card-bg p-3 rounded-lg flex items-center justify-between">
-                            <div class="flex items-center space-x-3"><span class="text-3xl">ðŸ˜Ž</span><div><h3 class="font-semibold">Click for Reward</h3><p class="text-xs text-gray-400">Rewarded Popup</p></div></div>
-                            <button class="bg-white text-black font-bold px-6 py-2 rounded-lg text-sm btn" onclick="claimReward('popup')">Claim</button>
-                        </div>
-                         <div class="card-bg p-3 rounded-lg flex items-center justify-between">
-                            <div class="flex items-center space-x-3"><span class="text-3xl">ðŸ‘€</span><div><h3 class="font-semibold">Watch a Video</h3><p class="text-xs text-gray-400">In-App Interstitial</p></div></div>
-                            <button class="bg-gray-700 text-white font-bold px-6 py-2 rounded-lg text-sm btn" onclick="claimReward('inApp')">Start</button>
-                        </div>
-                        <div class="card-bg p-3 rounded-lg flex items-center justify-between">
-                            <div class="flex items-center space-x-3"><span class="text-3xl">ðŸŽ®</span><div><h3 class="font-semibold">Play Mini App</h3><p class="text-xs text-gray-400">Get a big reward!</p></div></div>
-                            <button class="bg-blue-500 text-white font-bold px-6 py-2 rounded-lg text-sm btn" onclick="claimReward('miniApp')">Play</button>
-                        </div>
-                    </div>
-                </section>
-            </div>
+          <div id="home-page" class="p-4 space-y-6 sub-page">
+  <div class="card-bg p-4 rounded-lg flex items-center justify-between">
+    <div>
+      <p class="text-gray-400 text-sm">Your Balance</p>
+      <p class="text-3xl font-bold"><span id="coin-balance">0</span> Coins</p>
+    </div>
+    <button id="home-withdraw-btn" class="bg-white text-black font-semibold px-6 py-2 rounded-lg">Withdraw</button>
+  </div>
+
+  <!-- 🔥 এখানে কাটা টাস্ক ব্লক পেস্ট করো (Home-only) -->
+  <!-- 🔥 Telegram Task Section Start -->
+  <div class="p-4 space-y-4">
+    <h1 class="text-2xl font-bold text-center text-accent mb-4">🎯 Task List</h1>
+
+    <div class="card-bg p-4 rounded-2xl border border-accent">
+      <h2 class="font-semibold text-lg mb-2">1️⃣ Join Telegram Group</h2>
+      <p class="text-gray-400 mb-3">Join our official Telegram group to get daily updates and bonuses!</p>
+      <a href="https://t.me/+i24dYy4Ps7U0M2Jl" target="_blank">
+        <button class="btn-accent px-4 py-2 rounded-lg w-full">Join Group</button>
+      </a>
+    </div>
+
+    <div class="card-bg p-4 rounded-2xl border border-accent">
+      <h2 class="font-semibold text-lg mb-2">2️⃣ Join Telegram Channel</h2>
+      <p class="text-gray-400 mb-3">Join our official Telegram channel for announcements and rewards!</p>
+      <a href="https://t.me/earning1100022" target="_blank">
+        <button class="btn-accent px-4 py-2 rounded-lg w-full">Join Channel</button>
+      </a>
+    </div>
+
+    <div class="text-center mt-4">
+      <button class="btn-outline-accent px-6 py-2 rounded-lg">✅ Claim Reward</button>
+    </div>
+  </div>
+  <!-- 🔥 Telegram Task Section End -->
+
+  <!-- বাকি home-page এর অন্যান্য অংশ (যদি থাকে) -->
+  <section>
+    ... (বাকি Daily Tasks / অন্য অংশ) ...
+  </section>
+</div>
 
             <!-- Wallet Page -->
             <div id="wallet-page" class="p-4 space-y-6 sub-page">
@@ -630,33 +635,7 @@
     </script>
 </body></script>
 
-    <!-- 🔥 Telegram Task Section Start -->
-    <div class="p-4 space-y-4">
-      <h1 class="text-2xl font-bold text-center text-accent mb-4">🎯 Task List</h1>
 
-      <!-- Task 1: Join Telegram Group -->
-      <div class="card-bg p-4 rounded-2xl border border-accent">
-        <h2 class="font-semibold text-lg mb-2">1️⃣ Join Telegram Group</h2>
-        <p class="text-gray-400 mb-3">Join our official Telegram group to get daily updates and bonuses!</p>
-        <a href="https://t.me/+i24dYy4Ps7U0M2Jl" target="_blank">
-          <button class="btn-accent px-4 py-2 rounded-lg w-full">Join Group</button>
-        </a>
-      </div>
-
-      <!-- Task 2: Join Telegram Channel -->
-      <div class="card-bg p-4 rounded-2xl border border-accent">
-        <h2 class="font-semibold text-lg mb-2">2️⃣ Join Telegram Channel</h2>
-        <p class="text-gray-400 mb-3">Join our official Telegram channel for announcements and rewards!</p>
-        <a href="https://t.me/earning1100022" target="_blank">
-          <button class="btn-accent px-4 py-2 rounded-lg w-full">Join Channel</button>
-        </a>
-      </div>
-
-      <div class="text-center mt-4">
-        <button class="btn-outline-accent px-6 py-2 rounded-lg">✅ Claim Reward</button>
-      </div>
-    </div>
-    <!-- 🔥 Telegram Task Section End -->
 
   </body>
 </html>
